@@ -1,0 +1,112 @@
+---
+title: "Grouping and Aggregating with dplyr"
+author: "Cole Tanigawa-Lau"
+output: 
+  html_notebook:
+    toc: true
+    toc_float: true
+    theme: "flatly"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Functions covered
+
+  + [filter()](https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/filter)
+  + [mutate()](https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/mutate)
+  + [group_by()](https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/group_by)
+  + [summarize()](https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/summarise)
+
+# Groups in the social sciences
+While much research in the social sciences seeks to analyze individual behavior, it's often necessary to make inferences based on observations of groups. For example, if it's impossible to obtain voter turnout data specifying whether each citizen voted, researchers may study data on precincts instead. Working with different groups and levels of aggregation is common while analyzing data, and `dplyr` makes it easy to implement the basic tools you'll need.
+
+
+# About the data
+This lesson will work with some of the data from my senior capstone project. We have records of government-provisioned disaster aid at the household level in the `aid` object. In `contrib`, we have (publicly available) data on campaign contributions to Gov. Chris Christie, separated by donation. Finally, we have data on the percentage of flooded area in each zip code stored in `flood`.
+```{r library, message=FALSE}
+library(dplyr)
+
+aid <- readRDS("data/house_aid.rds")
+contrib <- readRDS("data/indv_contrib.rds")
+flood <- readRDS("data/zip_flood.rds")
+```
+
+# A little cleaning
+For the most part, these data files are already cleaned. We'll go through an example here to demonstrate some `dplyr` functions.
+ <!-- (or [tibble](http://tibble.tidyverse.org)) -->
+You can use `filter()` to create a subset of your data based on one or more logical tests. Here, we'll look for contributions before 2013, then search within those for donations coming from Flemington.
+```{r filter}
+pre13 <- filter(contrib, date < as.Date("2013-01-01"))
+pre13flem <- filter(pre13, city == "FLEMINGTON")
+
+head(pre13flem)
+```
+We could also do this in one step:
+```{r filter2}
+pre13flem2 <- filter(contrib, 
+                     date < as.Date("2013-01-01"),
+                     city == "FLEMINGTON")
+pre13flem3 <- filter(contrib, 
+                     date < as.Date("2013-01-01") &
+                     city == "FLEMINGTON")
+identical(pre13flem, pre13flem2)
+identical(pre13flem, pre13flem3)
+```
+
+In our contributions data set, cities are written in capital letters, but our aid data set has them in title case. Here, we'll use `mutate()` to clean and create columns, returning a new data frame. Like `filter()`, mutate can also work on multiple columns at once. (Take a look at `?mutate_at` for documentation on how to apply one function quickly to multiple columns.)
+
+```{r mutate}
+aid2 <- mutate(aid,
+               city = toupper(city),
+               state_fips = "34")
+head(aid2)
+```
+
+# What changes when grouping
+Grouping in the tidyverse uses the "adverb" `group_by()`. This function tells `dplyr` that you would like to perform operations within groups, rather than across the entire data set at once. 
+
+To understand how grouping affects the `filter()` function, we will look for the last contribution in each city. Consider what would be the result of running the following line:
+```{r ungrouped_filter, eval=FALSE}
+filter(contrib, date == last(date))
+```
+Instead of finding each city's last contribution, the line above subsets to all contributions made on the final date observed in the data set. To compare contribution dates within cities, we'll need to use `group_by()`.
+```{r group_mutate}
+contrib_grpd <- group_by(contrib, city)
+last_contrib <- filter(contrib_grpd, date == last(date))
+```
+Some of the cities in `last_contrib` still have multiple donations listed. These are cities in which multiple contributions were made on the last day. Just to demonstrate further, let's see how a second `dplyr` function works with `group_by()`.
+
+```{r group_sample}
+sample_n(last_contrib, 1)
+```
+Note that here, instead of returning data frame with one row, `sample_n()` sampled _within groups_, returning a random observation from each city in `last_contrib`. We did not need to call `group_by()` again, because using `filter()` on a `grouped_df` (like `contrib_grpd`) returns a data frame that is still grouped. (You can use `ungroup()` to remove the grouping.)
+
+# Aggregating data
+Grouping is often most useful when summarizing or aggregating data. Our data sets are currently on three different levels: household (`aid`), contribution (`contrib`), and zip code (`flood`). We will aggregate the first two data sets to the zip code level so that the three can be merged and analyzed together easily.
+
+Here, we'll also use the pipe operator, [`%>%`](https://stackoverflow.com/documentation/r/652/pipe-operators-and-others/2132/basic-use-and-chaining#t=201709201557523766966) to make the code easier to read. To aggregate the contribution amounts, we can calculate the sums across each to zip code. The `summarize()` function accepts a `grouped_df()` and applies operations within groups.
+
+```{r summarize}
+zip_contrib <- 
+  contrib %>%
+  group_by(zip) %>%
+  summarize(contrib_amount = sum(amount))
+head(zip_contrib)
+```
+
+For the aid data, let's total the disbursement amounts and count the number of individuals eligible for this government aid package.
+```{r summarize2}
+zip_aid <- 
+  aid2 %>%
+  group_by(zip) %>%
+  summarize(aid_amount  = sum(ihp_amount),
+            ihp_elig    = sum(ihp_elig))
+head(zip_aid)
+```
+Now we have three data sets with different information about New Jersey zip codes.
+
+# Fitting models within groups
+(in progress)
