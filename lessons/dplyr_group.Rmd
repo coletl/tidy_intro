@@ -1,5 +1,5 @@
 ---
-title: "Grouping and Aggregating with dplyr"
+title: "Grouping and aggregating with dplyr"
 author: "Cole Tanigawa-Lau"
 output: 
   html_notebook:
@@ -13,7 +13,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Functions covered
+### Functions covered:
 
   + [filter()](https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/filter)
   + [mutate()](https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/mutate)
