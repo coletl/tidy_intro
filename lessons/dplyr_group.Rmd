@@ -1,17 +1,11 @@
 ---
 title: "Grouping and Aggregating with dplyr"
 author: "Cole Tanigawa-Lau"
-output:
-  html_document:
-    df_print: paged
-    keep_md: yes
-    theme: flatly
-    toc: yes
-    toc_float: yes
+output: 
   html_notebook:
-    theme: flatly
-    toc: yes
-    toc_float: yes
+    toc: true
+    toc_float: true
+    theme: "flatly"
 ---
 
 ```{r setup, include=FALSE}
@@ -67,7 +61,7 @@ In our contributions data set, cities are written in capital letters, but our ai
 ```{r mutate}
 aid2 <- mutate(aid,
                city = toupper(city),
-               ihp_ref = as.numeric(ihp_ref),
+               ihp_ref = as.numeric(ihp_ref)
                ihp_elig = as.numeric(ihp_elig))
 head(aid2)
 ```
