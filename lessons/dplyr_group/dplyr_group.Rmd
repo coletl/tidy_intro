@@ -24,11 +24,11 @@ knitr::opts_chunk$set(echo = TRUE)
   + [group_by()](https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/group_by)
   + [summarize()](https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/summarise)
 
-### Groups in the social sciences
+## Groups in the social sciences
 
 While much research in the social sciences seeks to analyze individual behavior, it's often necessary to make inferences based on observations of groups. For example, if it's impossible to obtain voter turnout data specifying whether each citizen voted, researchers may study data on precincts instead. Working with different groups and levels of aggregation is common while analyzing data, and `dplyr` makes it easy to implement the basic tools you'll need.
 
-### About the data
+## About the data
 
 This lesson will work with some of the data from my senior capstone project. We have records of government-provisioned disaster aid at the household level in the `aid` object. In `contrib`, we have (publicly available) data on campaign contributions to Gov. Chris Christie, separated by donation. Finally, we have data on the percentage of flooded area in each zip code stored in `flood`.
 ```{r library, message=FALSE}
