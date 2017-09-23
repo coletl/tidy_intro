@@ -342,7 +342,9 @@ head(zip_aid)</code></pre>
 ## 4 07004    3367.49       58
 ## 5 07005   38856.34      143
 ## 6 07006   42445.03      280</code></pre>
-<p>Now we have three data sets with different information about New Jersey zip codes.</p>
+<p>Now we have three data sets with different information about New Jersey zip codes. We’ll save the two new data sets to use in another lesson.</p>
+<pre class="r"><code>saveRDS(zip_aid, &quot;data/zip_aid.rds&quot;)
+saveRDS(zip_contrib, &quot;data/zip_contrib.rds&quot;)</code></pre>
 </div>
 <div id="fitting-models-within-groups" class="section level1">
 <h1>Fitting models within groups</h1>

@@ -112,7 +112,12 @@ zip_aid <-
             ihp_elig    = sum(ihp_elig))
 head(zip_aid)
 ```
-Now we have three data sets with different information about New Jersey zip codes.
+Now we have three data sets with different information about New Jersey zip codes. We'll save the two new data sets to use in another lesson.
+
+```{r save}
+saveRDS(zip_aid, "data/zip_aid.rds")
+saveRDS(zip_contrib, "data/zip_contrib.rds")
+```
 
 # Fitting models within groups
 (in progress)
