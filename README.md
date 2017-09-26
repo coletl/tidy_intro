@@ -11,7 +11,7 @@ Using tidyverse packages makes life easier. Functions in the tidyverse are desig
 To learn more about the tidyverse, check out the lessons and exercises in [R for Data Science](http://r4ds.had.co.nz/index.html).
 
 ## Lessons
-These materials are designed to supplement an introductory Data Analysis course taught in NYU Abu Dhabi's political science program. They assume a basic understanding of R and some familiarity with its data structures, particularly data frames. Examples will also try to introduce (social science) data terminology to help readers to search for more information on these topics.
+These materials are designed to supplement an introductory Data Analysis course taught in NYU Abu Dhabi's political science program. They assume a basic understanding of R and some familiarity with its data structures, particularly data frames. Examples will also try to introduce (social science) data terminology to help readers looking for more information on these topics.
 
 To follow along with the lessons, clone or download the [GitHub repository](https://github.com/coletl/tidy_intro) and open `tidy_intro.Rproj` in RStudio. You'll be able to view a lesson by opening an `.html` file in any web browser, and you can run the code in its corresponding `.Rmd` file.
 
