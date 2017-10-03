@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Cole Tanigawa-Lau" />
+
+
+<title>Combining (joining/merging) data sets with dplyr</title>
+
+<script src="dplyr_join_files/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="dplyr_join_files/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="dplyr_join_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="dplyr_join_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="dplyr_join_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="dplyr_join_files/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="dplyr_join_files/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="dplyr_join_files/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="dplyr_join_files/navigation-1.1/tabsets.js"></script>
+<link href="dplyr_join_files/highlightjs-1.1/default.css" rel="stylesheet" />
+<script src="dplyr_join_files/highlightjs-1.1/highlight.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Combining (joining/merging) data sets with dplyr</h1>
+<h4 class="author"><em>Cole Tanigawa-Lau</em></h4>
+
+</div>
+
+
+<div id="functions-covered" class="section level3">
+<h3>Functions covered:</h3>
+<ul>
+<li><a href="https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/left_join">left_join()</a></li>
+<li><a href="https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/right_join">right_join()</a></li>
+<li><a href="https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/inner_join">inner_join()</a></li>
+<li><a href="https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/full_join">full_join()</a></li>
+</ul>
+</div>
+<div id="combining-data-sets" class="section level2">
+<h2>Combining data sets</h2>
+<p>It is nearly always the case that your analyses will require data from a combination of at least two distinct data sets. The data sets you see in class and use for assignments have already been cleaned and merged for you. The analyses for your final projects, however, will likely require using variables from multiple data sources and combining them based on a variable the data sets share. This process is commonly known as <em>merging</em> in the social sciences and <em>joining</em> in database contexts. Here, I’ll introduce the types of <code>dplyr</code> joins that I have used most frequently. For a much more extensive demonstration of joins in <code>dplyr</code>, you can check out <a href="https://cran.r-project.org/web/packages/dplyr/vignettes/two-table.html">this vignette</a>. You can also use this <a href="http://stat545.com/bit001_dplyr-cheatsheet.html">cheat sheet</a> as a reference.</p>
+</div>
+<div id="about-the-data" class="section level2">
+<h2>About the data</h2>
+<p>We’ll be working with the flood and campaign contributions data sets that we built in the <a href="https://coletl.github.io/tidy_intro/lessons/dplyr_group/dplyr_group.html">aggregation lesson</a>. These data sets all have a variable in common: zip code. Having a shared variable to link each data set will be crucial in telling R how the data should be joined.</p>
+<pre class="r"><code>library(dplyr)
+
+contrib &lt;- readRDS(&quot;data/zip_contrib.rds&quot;)
+flood &lt;- readRDS(&quot;data/zip_flood.rds&quot;)</code></pre>
+</div>
+<div id="checking-the-data" class="section level1">
+<h1>Checking the data</h1>
+<p>First, let’s take a look at the data we’ll be combining.</p>
+<pre class="r"><code>head(contrib)</code></pre>
+<pre><code>## # A tibble: 6 x 2
+##     zip contrib_amount
+##   &lt;chr&gt;          &lt;dbl&gt;
+## 1 07001            250
+## 2 07002           4685
+## 3 07003          22330
+## 4 07004          46335
+## 5 07005          33210
+## 6 07006         157766</code></pre>
+<pre class="r"><code>head(flood)</code></pre>
+<pre><code>## # A tibble: 6 x 2
+##     zip flood_extent
+##   &lt;chr&gt;        &lt;dbl&gt;
+## 1 08310    0.0000000
+## 2 08403    0.9052407
+## 3 08205    0.5032754
+## 4 08221    0.5010307
+## 5 07430           NA
+## 6 07650    0.1558439</code></pre>
+<p>Before merging, it’s a good idea to check either the overlap or difference between each data set’s linking variable, (in this case, zip codes). Figuring out any problems at this point could save a good deal of time and frustration down the road. The functions <code>setdiff()</code> and <code>intersect()</code> are useful here.<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a></p>
+<pre class="r"><code>setdiff(contrib$zip, flood$zip)</code></pre>
+<pre><code>##  [1] &quot;07101&quot; &quot;07303&quot; &quot;07451&quot; &quot;07474&quot; &quot;07507&quot; &quot;07875&quot; &quot;07962&quot; &quot;07963&quot;
+##  [9] &quot;07978&quot; &quot;08213&quot; &quot;08218&quot; &quot;08250&quot; &quot;08362&quot; &quot;08504&quot; &quot;08543&quot; &quot;08739&quot;
+## [17] &quot;08754&quot; &quot;08818&quot;</code></pre>
+<pre class="r"><code>setdiff(flood$zip, contrib$zip)</code></pre>
+<pre><code>##   [1] &quot;08064&quot; &quot;08042&quot; &quot;08224&quot; &quot;08105&quot; &quot;08091&quot; &quot;08251&quot; &quot;08352&quot; &quot;08327&quot;
+##   [9] &quot;08320&quot; &quot;08066&quot; &quot;08061&quot; &quot;08328&quot; &quot;08828&quot; &quot;08733&quot; &quot;07505&quot; &quot;07439&quot;
+##  [17] &quot;08346&quot; &quot;08319&quot; &quot;07074&quot; &quot;08640&quot; &quot;08641&quot; &quot;08554&quot; &quot;08041&quot; &quot;08045&quot;
+##  [25] &quot;08049&quot; &quot;08110&quot; &quot;08230&quot; &quot;08311&quot; &quot;08314&quot; &quot;07108&quot; &quot;07878&quot; &quot;07870&quot;
+##  [33] &quot;07504&quot; &quot;07524&quot; &quot;08038&quot; &quot;08890&quot; &quot;07851&quot; &quot;07846&quot; &quot;08808&quot; &quot;08317&quot;
+##  [41] &quot;08562&quot; &quot;08073&quot; &quot;08104&quot; &quot;08030&quot; &quot;08007&quot; &quot;08248&quot; &quot;08323&quot; &quot;08316&quot;
+##  [49] &quot;07514&quot; &quot;07880&quot; &quot;08011&quot; &quot;08089&quot; &quot;08004&quot; &quot;08324&quot; &quot;07106&quot; &quot;08074&quot;
+##  [57] &quot;07077&quot; &quot;08810&quot; &quot;07420&quot; &quot;08821&quot; &quot;07822&quot; &quot;08344&quot; &quot;07606&quot; &quot;08031&quot;
+##  [65] &quot;08102&quot; &quot;08095&quot; &quot;08345&quot; &quot;08039&quot; &quot;07311&quot; &quot;07865&quot; &quot;08609&quot; &quot;08832&quot;
+##  [73] &quot;08722&quot; &quot;07502&quot; &quot;08215&quot; &quot;08340&quot; &quot;08240&quot; &quot;08019&quot; &quot;08246&quot; &quot;08318&quot;
+##  [81] &quot;08329&quot; &quot;08321&quot; &quot;08090&quot; &quot;07501&quot; &quot;08067&quot; &quot;07063&quot; &quot;08880&quot; &quot;07881&quot;
+##  [89] &quot;08350&quot; &quot;08103&quot; &quot;08084&quot; &quot;08029&quot; &quot;08348&quot; &quot;08063&quot; &quot;08097&quot; &quot;08629&quot;
+##  [97] &quot;07421&quot; &quot;07939&quot; &quot;07833&quot; &quot;08326&quot; &quot;08217&quot; &quot;07660&quot; &quot;07495&quot; &quot;08078&quot;
+## [105] &quot;08083&quot; &quot;08353&quot; &quot;08093&quot; &quot;08014&quot; &quot;08027&quot; &quot;07064&quot; &quot;07721&quot; &quot;07703&quot;
+## [113] &quot;08555&quot; &quot;07857&quot; &quot;07970&quot; &quot;07513&quot; &quot;07522&quot; &quot;08079&quot; &quot;08001&quot; &quot;08072&quot;
+## [121] &quot;07206&quot;</code></pre>
+<pre class="r"><code>zip_inter &lt;- intersect(flood$zip, contrib$zip)
+length(zip_inter)/length(flood$zip)</code></pre>
+<pre><code>## [1] 0.7966387</code></pre>
+<p>There are many zip codes included in the flood data set that are missing in the contributions data set. In some cases, this could indicate a problem in the data gathering or cleaning stages. Here, however, it makes sense: not all zip codes contributed to Gov. Christie’s reelection campaign. It looks like almost 80% of the zip codes will merge properly, so let’s go ahead and check each data set for any duplicated zip codes.</p>
+<pre class="r"><code>any(duplicated(contrib$zip))</code></pre>
+<pre><code>## [1] FALSE</code></pre>
+<pre class="r"><code>any(duplicated(flood$zip))</code></pre>
+<pre><code>## [1] FALSE</code></pre>
+</div>
+<div id="joining" class="section level1">
+<h1>Joining</h1>
+<p>R’s <code>base</code> function for joining data is <code>merge()</code>, which offers many arguments to control the join. In <code>dplyr</code>, additional functionality is offered through multiple joining functions. We will cover the most common type of join, in which you are combining two data sets. To learn about subsetting one data set based matching values in another, see the section on filtering joins in the vignette linked above.</p>
+<p>As we go through the different types of joins, it might help to refer to this diagram made by <a href="https://twitter.com/yutannihilation/status/551572539697143808">Hiroaki Yutani</a>: <img src="join_diagram.png" width="50%" /></p>
+<div id="inner_join" class="section level3">
+<h3><code>inner_join()</code></h3>
+<p>The <code>inner_join()</code> function returns a data frame containing <strong>only observations with a match in both data sets</strong>. In other words, our result will contain only rows with zip codes that are in both <code>contrib</code> and <code>flood</code>. The <code>inner_join()</code> function is equivalent to using <code>base::merge()</code> with the default parameters.</p>
+<p>Since the only column we want to use as a reference has the same name in both data sets, we don’t need to specify a <code>by</code> argument for any of the dplyr joins, but I’ll do so here for clarity and to avoid a message from <code>dplyr</code>.</p>
+<pre class="r"><code>data_ij &lt;- inner_join(contrib, flood, by = &quot;zip&quot;)
+
+# Recall that we assigned zip_inter &lt;- intersect(contrib$zip, flood$zip)
+all(data_ij$zip %in% zip_inter)</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<pre class="r"><code>nrow(data_ij)</code></pre>
+<pre><code>## [1] 474</code></pre>
+<p>As you can see, we lost many observations in <code>data_ij</code>, including all of the zip codes that did not make any campaign contributions. That doesn’t make much sense, since these amounts should actually be zero. For our purposes here, we’ll want to use a different joining function.</p>
+</div>
+<div id="left_join-and-right_join" class="section level3">
+<h3><code>left_join()</code> and <code>right_join()</code></h3>
+<p>The <code>left_join()</code> and <code>right_join()</code> functions return a data frame containing <strong>all observations in one data frame and the matching observations from the other</strong>.</p>
+<pre class="r"><code>data_lj &lt;- left_join(contrib, flood, by = &quot;zip&quot;)
+nrow(contrib) == nrow(data_lj)</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<p>The <code>left_join()</code> function takes the data frame on the “left” (i.e., <code>contrib</code>, or the first one passed to <code>left_join()</code>) and adds on the matching columns from the “right” data frame. The result is a data frame with the same number of rows as <code>contrib</code>. We can see that iforn zip codes not contained in <code>flood_extent</code>, there are <code>NA</code> values in <code>data_lj</code>.</p>
+<pre class="r"><code>filter(data_lj, 
+       is.na(flood_extent)) %&gt;%
+  head()</code></pre>
+<pre><code>## # A tibble: 6 x 3
+##     zip contrib_amount flood_extent
+##   &lt;chr&gt;          &lt;dbl&gt;        &lt;dbl&gt;
+## 1 07101             20           NA
+## 2 07303           1000           NA
+## 3 07401          18425           NA
+## 4 07403           1000           NA
+## 5 07416           1375           NA
+## 6 07418            400           NA</code></pre>
+<p>The <code>right_join()</code> function is the mirror image of <code>left_join()</code>. It’s as if you switched the <code>x</code> and <code>y</code> arguments in <code>left_join()</code>.</p>
+<pre class="r"><code>data_rj &lt;- right_join(contrib, flood, by = &quot;zip&quot;)
+nrow(flood) == nrow(data_rj)</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<pre class="r"><code>setdiff(data_rj, left_join(flood, contrib, by = &quot;zip&quot;))</code></pre>
+<pre><code>## # A tibble: 0 x 3
+## # ... with 3 variables: zip &lt;chr&gt;, flood_extent &lt;dbl&gt;,
+## #   contrib_amount &lt;dbl&gt;</code></pre>
+</div>
+<div id="full_join" class="section level3">
+<h3><code>full_join()</code></h3>
+<p>The <code>full_join()</code> function returns a data frame containing <strong>all observations from both data frames</strong>. This is useful for when you don’t want to exclude any observations simply due to missingness.</p>
+<pre class="r"><code>data_fj &lt;- full_join(contrib, flood, by = &quot;zip&quot;)
+
+setdiff(data_fj$zip, c(contrib$zip, flood$zip))</code></pre>
+<pre><code>## character(0)</code></pre>
+</div>
+<div id="duplicate-matches" class="section level2">
+<h2>Duplicate matches</h2>
+<p>So far, we’ve covered fairly basic joins with exact one-to-one matches. Very commonly, though, you’ll be merging data at different levels or with some duplicate values in the linking variable. We’ll use the individual-level campaign contributions data set from our <a href="https://coletl.github.io/tidy_intro/lessons/dplyr_group/dplyr_group.html">aggregation lesson</a> as an example.</p>
+<pre class="r"><code>indv_contrib &lt;- readRDS(&quot;data/indv_contrib.rds&quot;)
+
+indv_data &lt;- full_join(indv_contrib, flood, &quot;zip&quot;)</code></pre>
+<p>There are many more observations here for each zip code, so let’s look at only one zip code to see what’s going on. When joining, we took the <code>flood_extent</code> value for zip code <code>08008</code> and matched it to all observations in <code>indv_contrib</code> with the same zip code. Because <code>flood_extent</code> is specific only to zip codes and not to the individual donars that live in these areas, <code>indv_data$flood_extent</code> has many duplicate values.</p>
+<pre class="r"><code># Single observation in flood data
+filter(flood, zip == &quot;08008&quot;)</code></pre>
+<pre><code>## # A tibble: 1 x 2
+##     zip flood_extent
+##   &lt;chr&gt;        &lt;dbl&gt;
+## 1 08008    0.5646336</code></pre>
+<pre class="r"><code># That value is entered in the &quot;flood_extent&quot; column for all individuals
+filter(indv_data, zip == &quot;08008&quot;)[1:10, ]</code></pre>
+<pre><code>##         id                  name amount       date                city
+## 1  7234317         BARRON, ART R   3400 2009-09-21         BEACH HAVEN
+## 2  7234621     MANCINI, JOSEPH H   3400 2009-09-22 BEACH HAVEN TERRACE
+## 3  7234612        BARRON, JOAN C   1500 2009-09-22         BEACH HAVEN
+## 4  7235259       RUSSO, CAROLA A   1000 2009-08-21 LONG BEACH TOWNSHIP
+## 5  7233166        MUROFF, ROBERT    500 2009-09-28 LONG BEACH TOWNSHIP
+## 6  7233178 SHACKLETON, RICHARD J    500 2009-09-28         SHIP BOTTOM
+## 7  2188126     BATTISTA, MICHAEL    500 2009-09-28         BEACH HAVEN
+## 8  5215201     HUTSON, WILLIAM E    500 2009-09-28 LONG BEACH TOWNSHIP
+## 9   981749      CLEARY, DENNIS J    500 2009-09-28         BEACH HAVEN
+## 10 7233296         LEONETTI, JIM    500 2009-09-28 LONG BEACH TOWNSHIP
+##      zip flood_extent
+## 1  08008    0.5646336
+## 2  08008    0.5646336
+## 3  08008    0.5646336
+## 4  08008    0.5646336
+## 5  08008    0.5646336
+## 6  08008    0.5646336
+## 7  08008    0.5646336
+## 8  08008    0.5646336
+## 9  08008    0.5646336
+## 10 08008    0.5646336</code></pre>
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Loading the <code>dplyr</code> package imports set functions like <code>intersect()</code> and <code>setdiff()</code>, making them available for use on data frames, but they’ll still work on vectors as well.<a href="#fnref1">↩</a></p></li>
+</ol>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

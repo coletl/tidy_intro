@@ -1,0 +1,141 @@
+---
+title: "Combining (joining/merging) data sets with dplyr"
+author: "Cole Tanigawa-Lau"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: "flatly"
+    self_contained: false
+  html_notebook:
+    toc: true
+    toc_float: true
+    theme: "flatly"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Functions covered:
+
+  + [left_join()](https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/left_join)
+  + [right_join()](https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/right_join)
+  + [inner_join()](https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/inner_join)
+  + [full_join()](https://www.rdocumentation.org/packages/dplyr/versions/0.7.3/topics/full_join)
+
+## Combining data sets
+
+It is nearly always the case that your analyses will require data from a combination of at least two distinct data sets. The data sets you see in class and use for assignments have already been cleaned and merged for you. The analyses for your final projects, however, will likely require using variables from multiple data sources and combining them based on a variable the data sets share. This process is commonly known as _merging_ in the social sciences and _joining_ in database contexts. Here, I'll introduce the types of `dplyr` joins that I have used most frequently. For a much more extensive demonstration of joins in `dplyr`, you can check out [this vignette](https://cran.r-project.org/web/packages/dplyr/vignettes/two-table.html). You can also use this [cheat sheet](http://stat545.com/bit001_dplyr-cheatsheet.html) as a reference.
+
+## About the data
+
+We'll be working with the flood and campaign contributions data sets that we built in the [aggregation lesson](https://coletl.github.io/tidy_intro/lessons/dplyr_group/dplyr_group.html). These data sets all have a variable in common: zip code. Having a shared variable to link each data set will be crucial in telling R how the data should be joined.
+
+```{r library, message=FALSE}
+library(dplyr)
+
+contrib <- readRDS("data/zip_contrib.rds")
+flood <- readRDS("data/zip_flood.rds")
+```
+
+# Checking the data
+First, let's take a look at the data we'll be combining.
+```{r head}
+head(contrib)
+
+head(flood)
+```
+Before merging, it's a good idea to check either the overlap or difference between each data set's linking variable, (in this case, zip codes). Figuring out any problems at this point could save a good deal of time and frustration down the road. The functions `setdiff()` and `intersect()` are useful here.[^set]
+
+[^set]: Loading the `dplyr` package imports set functions like `intersect()` and `setdiff()`, making them available for use on data frames, but they'll still work on vectors as well.
+```{r setdiff}
+
+setdiff(contrib$zip, flood$zip)
+setdiff(flood$zip, contrib$zip)
+
+zip_inter <- intersect(flood$zip, contrib$zip)
+length(zip_inter)/length(flood$zip)
+```
+
+There are many zip codes included in the flood data set that are missing in the contributions data set. In some cases, this could indicate a problem in the data gathering or cleaning stages. Here, however, it makes sense: not all zip codes contributed to Gov. Christie's reelection campaign. It looks like almost 80% of the zip codes will merge properly, so let's go ahead and check each data set for any duplicated zip codes.
+
+```{r dupes}
+any(duplicated(contrib$zip))
+any(duplicated(flood$zip))
+```
+
+# Joining
+R's `base` function for joining data is `merge()`, which offers many arguments to control the join. In `dplyr`, additional functionality is offered through multiple joining functions. We will cover the most common type of join, in which you are combining two data sets. To learn about subsetting one data set based matching values in another, see the section on filtering joins in the vignette linked above.
+
+As we go through the different types of joins, it might help to refer to this diagram made by [Hiroaki Yutani](https://twitter.com/yutannihilation/status/551572539697143808):
+```{r diagram, out.width = "50%", echo = FALSE} 
+knitr::include_graphics("join_diagram.png")
+```
+
+### `inner_join()`
+The `inner_join()` function returns a data frame containing __only observations with a match in both data sets__. In other words, our result will contain only rows with zip codes that are in both `contrib` and `flood`. The `inner_join()` function is equivalent to using `base::merge()` with the default parameters.
+
+Since the only column we want to use as a reference has the same name in both data sets, we don't need to specify a `by` argument for any of the dplyr joins, but I'll do so here for clarity and to avoid a message from `dplyr`.
+```{r inner_join}
+data_ij <- inner_join(contrib, flood, by = "zip")
+
+# Recall that we assigned zip_inter <- intersect(contrib$zip, flood$zip)
+all(data_ij$zip %in% zip_inter)
+
+nrow(data_ij)
+```
+As you can see, we lost many observations in `data_ij`, including all of the zip codes that did not make any campaign contributions. That doesn't make much sense, since these amounts should actually be zero. For our purposes here, we'll want to use a different joining function.
+
+### `left_join()` and `right_join()`
+The `left_join()` and `right_join()` functions return a data frame containing __all observations in one data frame and the matching observations from the other__.
+```{r left_join}
+data_lj <- left_join(contrib, flood, by = "zip")
+nrow(contrib) == nrow(data_lj)
+```
+The `left_join()` function takes the data frame on the "left" (i.e., `contrib`, or the first one passed to `left_join()`) and adds on the matching columns from the "right" data frame. The result is a data frame with the same number of rows as `contrib`. We can see that iforn zip codes not contained in `flood_extent`, there are `NA` values in `data_lj`.
+
+```{r}
+filter(data_lj, 
+       is.na(flood_extent)) %>%
+  head()
+```
+
+The `right_join()` function is the mirror image of `left_join()`. It's as if you switched the `x` and `y` arguments in `left_join()`.
+```{r right_join}
+data_rj <- right_join(contrib, flood, by = "zip")
+nrow(flood) == nrow(data_rj)
+
+setdiff(data_rj, left_join(flood, contrib, by = "zip"))
+```
+
+
+### `full_join()`
+The `full_join()` function returns a data frame containing __all observations from both data frames__. This is useful for when you don't want to exclude any observations simply due to missingness.
+
+```{r full_join}
+data_fj <- full_join(contrib, flood, by = "zip")
+
+setdiff(data_fj$zip, c(contrib$zip, flood$zip))
+```
+
+## Duplicate matches
+So far, we've covered fairly basic joins with exact one-to-one matches. Very commonly, though, you'll be merging data at different levels or with some duplicate values in the linking variable. We'll use the individual-level campaign contributions data set from our [aggregation lesson](https://coletl.github.io/tidy_intro/lessons/dplyr_group/dplyr_group.html) as an example.
+
+
+```{r multilevel_join}
+indv_contrib <- readRDS("data/indv_contrib.rds")
+
+indv_data <- full_join(indv_contrib, flood, "zip")
+```
+
+There are many more observations here for each zip code, so let's look at only one zip code to see what's going on. When joining, we took the `flood_extent` value for zip code `08008` and matched it to all observations in `indv_contrib` with the same zip code. Because `flood_extent` is specific only to zip codes and not to the individual donars that live in these areas, `indv_data$flood_extent` has many duplicate values.
+
+```{r inspect_multilevel}
+# Single observation in flood data
+filter(flood, zip == "08008")
+
+# That value is entered in the "flood_extent" column for all individuals
+filter(indv_data, zip == "08008")[1:10, ]
+```
