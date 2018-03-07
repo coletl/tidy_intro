@@ -13,7 +13,7 @@ To learn more about the tidyverse, check out the lessons and exercises in [_R fo
 ## Lessons
 These materials are designed to supplement an introductory Data Analysis course taught in NYU Abu Dhabi's political science program. They assume a basic understanding of R and some familiarity with its data structures, particularly data frames. Examples will also try to introduce (social science) data terminology to help readers looking for more information on these topics.
 
-To follow along with the lessons, clone or download the [GitHub repository](https://github.com/coletl/tidy_intro) and open `tidy_intro.Rproj` in RStudio. You'll be able to view a lesson by opening an `.html` file in any web browser, and you can run the code in its corresponding `.Rmd` file.
+To follow along with the lessons, clone or download the [GitHub repository](https://github.com/coletl/tidy_intro) and open `tidy_intro.Rproj` in RStudio. You'll be able to view a lesson by opening an HTML file in any web browser, and you can run the code in its corresponding .Rmd file.
 
 If you'd just like to read through the lessons, you can follow the links here:
 
