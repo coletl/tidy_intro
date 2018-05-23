@@ -17,7 +17,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Functions covered:
+## Functions covered:
 
   - `st_read()`
   - `geom_sf()`
@@ -38,7 +38,7 @@ GIS data for social science research tend to be stored in one of two formats: ve
 # About `sf`
 Standard packages for analyzing spatial data provide methods and object classes specialized for particular types of data. Of course, they also supply functions for reading, writing, generating, and manipulating spatial objects. This tutorial will cover the basic tools in `sf`, a package for representing [simple features](https://en.wikipedia.org/wiki/Simple_Features) in R. Because `sf` is still under development, it does not support several crucial operations, though eventually `sf` will replace the currently standard suite of R spatial packages for vector data: `sp`, `maptools`, `rgdal`, `rgeos`.
 
-Rather than cover the specifics of GIS or how to create simple features from scratch, this tutorial will give a superficial introduction to `sf` objects before demonstrating easy-to-implement manipulation and plotting methods. I learned of the `sf` package from an excellent, but more advanced, [blog post](http://strimas.com/r/tidy-sf/). I recommend going there first, if you're looking to learn more. The package authors include a series of very detailed [vignettes](https://cran.r-project.org/web/packages/sf/). 
+Rather than cover the specifics of GIS or how to create simple features from scratch, this tutorial will give a superficial introduction to `sf` objects before demonstrating easy-to-implement manipulation and plotting methods. I learned of the `sf` package from an excellent, but more advanced, [blog post](http://strimas.com/r/tidy-sf/). I recommend going there next, if you're looking to learn more. The package authors include a series of very detailed [vignettes](https://cran.r-project.org/web/packages/sf/). 
 
 ```{r libraries, message=FALSE, warning=FALSE}
 library(dplyr)
@@ -50,7 +50,7 @@ library(scales)
 library(sf)
 ```
 
-Its package authors designed `sf` to fit neatly into the tidyverse. Like `stringr`, functions begin with a common string: `st_`, an abbreviation of _spatial and temporal_. While the package defines many auxiliary object classes, you will primarily be working with objects that are merely extensions of the basic data frame. 
+Its authors designed the `sf` package to fit neatly into the tidyverse. Like `stringr`, functions begin with a common string: `st_`, an abbreviation of _spatial and temporal_. While the package defines many auxiliary object classes, you will primarily be working with objects that are merely extensions of the basic data frame. 
 
 ```{r sf_df}
 # Read in precinct-level 2016 presidential election results from Hawaii
@@ -65,7 +65,8 @@ class(hi)
 
 This structure makes indexing, merging, and aggregating spatial objects intuitive; for the most part, you can proceed as you would with any other data frame. What sets `sf` objects apart is their `geometry` column, which holds the GIS data associated with the corresponding row of the data frame. This column follows your `sf` object around as long as it retains its class.[^select_nogeom] To remove the geometry, use `as.data.frame()`.
 
-[^select_nogeom]: Even `select(hi, -geometry)` will return an `sf` object containing a geometry column.
+# Working with `sf` objects
+
 
 ```{r handling}
 # Merge with election results data
@@ -74,18 +75,30 @@ hi_pres <- left_join(hi, pres2016, by = c(DP = "precinct"))
 
 # Create new variables
 hi_pres2 <- mutate(hi_pres,
-                   county_code      = as.numeric(gsub("-[0-9]{2}$", "", DP)),
+                   district_code    = as.numeric(gsub("-[0-9]{2}$", "", DP)),
                    total_pres_votes = castle_votes_total + johnson_votes_total + stein_votes_total + 
                                         clinton_votes_total + trump_votes_total,
                    trump_vshare     = trump_votes_total / total_pres_votes,
                    clinton_vshare   = clinton_votes_total / total_pres_votes
                    )
+
+# Grouped operation
+hi_district <- 
+  group_by(hi_pres2,
+           district_code) %>%
+  summarize(no_prec = n(),
+            mean_trump = mean(trump_vshare),
+            turnout = sum(no_ballots, na.rm = TRUE)/sum(no_reg_voters, na.rm = TRUE)
+            )
+summary(hi_district)
+
 ```
 
+# Plotting `sf` objects
 ```{r, plot}
 # Subset to Oahu island
 oahu_pres <- filter(hi_pres2,
-                    between(county_code, 17, 51))
+                    between(district_code, 17, 51))
 
 
 ggplot(oahu_pres) + geom_sf(aes(fill = clinton_vshare)) + 
@@ -102,3 +115,12 @@ oahu_pres2 <- mutate(oahu_pres,
 ggplot(oahu_pres2) + geom_sf(aes(fill = pwin3rd)) + theme_bw()
 
 ```
+
+You can also use the `base` plotting system. It's especially useful for quickly checking that your data look as you'd expect.
+
+```{r base_plot}
+big <- filter(hi_pres2, between(district_code, 0, 7))
+big_district <- filter(hi_district, between(district_code, 0, 7))
+
+plot(big, max.plot = 1, col = "grey")
+plot(big_district, max.plot = 1, col = "grey")
