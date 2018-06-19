@@ -24,8 +24,8 @@
 <link href="dplyr_join_files/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
 <script src="dplyr_join_files/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="dplyr_join_files/navigation-1.1/tabsets.js"></script>
-<link href="dplyr_join_files/highlightjs-1.1/default.css" rel="stylesheet" />
-<script src="dplyr_join_files/highlightjs-1.1/highlight.js"></script>
+<link href="dplyr_join_files/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="dplyr_join_files/highlightjs-9.12.0/highlight.js"></script>
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css">
@@ -34,10 +34,12 @@
   }
 </style>
 <script type="text/javascript">
-if (window.hljs && document.readyState && document.readyState === "complete") {
-   window.setTimeout(function() {
-      hljs.initHighlighting();
-   }, 0);
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
 }
 </script>
 
@@ -91,6 +93,9 @@ img {
 }
 .tabbed-pane {
   padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
 }
 button.code-folding-btn:focus {
   outline: none;
@@ -246,7 +251,7 @@ flood &lt;- readRDS(&quot;data/zip_flood.rds&quot;)</code></pre>
 <p>First, let’s take a look at the data we’ll be combining.</p>
 <pre class="r"><code>head(contrib)</code></pre>
 <pre><code>## # A tibble: 6 x 2
-##     zip contrib_amount
+##   zip   contrib_amount
 ##   &lt;chr&gt;          &lt;dbl&gt;
 ## 1 07001            250
 ## 2 07002           4685
@@ -256,14 +261,14 @@ flood &lt;- readRDS(&quot;data/zip_flood.rds&quot;)</code></pre>
 ## 6 07006         157766</code></pre>
 <pre class="r"><code>head(flood)</code></pre>
 <pre><code>## # A tibble: 6 x 2
-##     zip flood_extent
+##   zip   flood_extent
 ##   &lt;chr&gt;        &lt;dbl&gt;
-## 1 08310    0.0000000
-## 2 08403    0.9052407
-## 3 08205    0.5032754
-## 4 08221    0.5010307
-## 5 07430           NA
-## 6 07650    0.1558439</code></pre>
+## 1 08310        0    
+## 2 08403        0.905
+## 3 08205        0.503
+## 4 08221        0.501
+## 5 07430       NA    
+## 6 07650        0.156</code></pre>
 <p>Before merging, it’s a good idea to check either the overlap or difference between each data set’s linking variable, (in this case, zip codes). Figuring out any problems at this point could save a good deal of time and frustration down the road. The functions <code>setdiff()</code> and <code>intersect()</code> are useful here.<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a></p>
 <pre class="r"><code>setdiff(contrib$zip, flood$zip)</code></pre>
 <pre><code>##  [1] &quot;07101&quot; &quot;07303&quot; &quot;07451&quot; &quot;07474&quot; &quot;07507&quot; &quot;07875&quot; &quot;07962&quot; &quot;07963&quot;
@@ -302,7 +307,7 @@ length(zip_inter)/length(flood$zip)</code></pre>
 <div id="inner_join" class="section level3">
 <h3><code>inner_join()</code></h3>
 <p>The <code>inner_join()</code> function returns a data frame containing <strong>only observations with a match in both data sets</strong>. In other words, our result will contain only rows with zip codes that are in both <code>contrib</code> and <code>flood</code>. The <code>inner_join()</code> function is equivalent to using <code>base::merge()</code> with the default parameters.</p>
-<p>Since the only column we want to use as a reference has the same name in both data sets, we don’t need to specify a <code>by</code> argument for any of the dplyr joins, but I’ll do so here for clarity and to avoid a message from <code>dplyr</code>.</p>
+<p>Since the only column we want to use as a reference has the same name in both data sets, we don’t need to specify a <code>by</code> argument for any of the <code>dplyr</code> joins, but I’ll do so here for clarity and to avoid a message from <code>dplyr</code>.</p>
 <pre class="r"><code>data_ij &lt;- inner_join(contrib, flood, by = &quot;zip&quot;)
 
 # Recall that we assigned zip_inter &lt;- intersect(contrib$zip, flood$zip)
@@ -323,7 +328,7 @@ nrow(contrib) == nrow(data_lj)</code></pre>
        is.na(flood_extent)) %&gt;%
   head()</code></pre>
 <pre><code>## # A tibble: 6 x 3
-##     zip contrib_amount flood_extent
+##   zip   contrib_amount flood_extent
 ##   &lt;chr&gt;          &lt;dbl&gt;        &lt;dbl&gt;
 ## 1 07101             20           NA
 ## 2 07303           1000           NA
@@ -354,13 +359,13 @@ setdiff(data_fj$zip, c(contrib$zip, flood$zip))</code></pre>
 <pre class="r"><code>indv_contrib &lt;- readRDS(&quot;data/indv_contrib.rds&quot;)
 
 indv_data &lt;- full_join(indv_contrib, flood, &quot;zip&quot;)</code></pre>
-<p>There are many more observations here for each zip code, so let’s look at only one zip code to see what’s going on. When joining, we took the <code>flood_extent</code> value for zip code <code>08008</code> and matched it to all observations in <code>indv_contrib</code> with the same zip code. Because <code>flood_extent</code> is specific only to zip codes and not to the individual donars that live in these areas, <code>indv_data$flood_extent</code> has many duplicate values.</p>
+<p>There are many more observations here for each zip code, so let’s look at only one zip code to see what’s going on. When joining, we took the <code>flood_extent</code> value for zip code <code>08008</code> and matched it to all observations in <code>indv_contrib</code> with the same zip code. Because <code>flood_extent</code> is specific only to zip codes and not to the individual donors that live in these areas, <code>indv_data$flood_extent</code> has many duplicate values.</p>
 <pre class="r"><code># Single observation in flood data
 filter(flood, zip == &quot;08008&quot;)</code></pre>
 <pre><code>## # A tibble: 1 x 2
-##     zip flood_extent
+##   zip   flood_extent
 ##   &lt;chr&gt;        &lt;dbl&gt;
-## 1 08008    0.5646336</code></pre>
+## 1 08008        0.565</code></pre>
 <pre class="r"><code># That value is entered in the &quot;flood_extent&quot; column for all individuals
 filter(indv_data, zip == &quot;08008&quot;)[1:10, ]</code></pre>
 <pre><code>##         id                  name amount       date                city

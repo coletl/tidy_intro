@@ -77,7 +77,7 @@ knitr::include_graphics("join_diagram.png")
 ### `inner_join()`
 The `inner_join()` function returns a data frame containing __only observations with a match in both data sets__. In other words, our result will contain only rows with zip codes that are in both `contrib` and `flood`. The `inner_join()` function is equivalent to using `base::merge()` with the default parameters.
 
-Since the only column we want to use as a reference has the same name in both data sets, we don't need to specify a `by` argument for any of the dplyr joins, but I'll do so here for clarity and to avoid a message from `dplyr`.
+Since the only column we want to use as a reference has the same name in both data sets, we don't need to specify a `by` argument for any of the `dplyr` joins, but I'll do so here for clarity and to avoid a message from `dplyr`.
 ```{r inner_join}
 data_ij <- inner_join(contrib, flood, by = "zip")
 
@@ -130,7 +130,7 @@ indv_contrib <- readRDS("data/indv_contrib.rds")
 indv_data <- full_join(indv_contrib, flood, "zip")
 ```
 
-There are many more observations here for each zip code, so let's look at only one zip code to see what's going on. When joining, we took the `flood_extent` value for zip code `08008` and matched it to all observations in `indv_contrib` with the same zip code. Because `flood_extent` is specific only to zip codes and not to the individual donars that live in these areas, `indv_data$flood_extent` has many duplicate values.
+There are many more observations here for each zip code, so let's look at only one zip code to see what's going on. When joining, we took the `flood_extent` value for zip code `08008` and matched it to all observations in `indv_contrib` with the same zip code. Because `flood_extent` is specific only to zip codes and not to the individual donors that live in these areas, `indv_data$flood_extent` has many duplicate values.
 
 ```{r inspect_multilevel}
 # Single observation in flood data
